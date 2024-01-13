@@ -6,6 +6,9 @@ package frc.robot.subsystems;
 
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+
+import org.littletonrobotics.junction.Logger;
+
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -15,9 +18,7 @@ public class ShooterSubsystem extends SubsystemBase {
   /** Creates a new TRShooterSubsystem. */
   private double shooterVelo;
 
-  private double TLP;
-  private double TLI;
-  private double TLD;
+  private double TLP, TLI, TLD, TLIz, kFF, kMaxOutput, kMinOutput, maxRPM;
 
   private double BRP;
   private double BRI;
@@ -25,61 +26,80 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private double feederVelo;
 
-  private CANSparkMax TLmotor1;
-  private CANSparkMax TLmotor2;
-  private CANSparkMax BRmotor1;
-  private CANSparkMax BRmotor2;
-  private CANSparkMax feederMotor;
+  private CANSparkMax TLmotor1, TLmotor2, BRmotor1, BRmotor2, feederMotor;
 
   public ShooterSubsystem() {
-    TLP = 1e-4;
+    // PID coefficients
+    TLP = 6e-5; 
     TLI = 0;
-    TLD = 0;
+    TLD = 0; 
+    TLIz = 0; 
+    kFF = 0.000015; 
+    kMaxOutput = 1; 
+    kMinOutput = -1;
+    maxRPM = 5700;
 
-    BRP = 1e-4;
-    BRI = 0;
-    BRD = 0;
+    // set PID coefficients
+    m_pidController.setP(TLP);
+    m_pidController.setI(TLI);
+    m_pidController.setD(TLD);
+    m_pidController.setIZone(TLIz);
+    m_pidController.setFF(kFF);
+    m_pidController.setOutputRange(kMinOutput, kMaxOutput);
 
-    shooterVelo = .8;
-    feederVelo = .8;
+    // display PID coefficients on SmartDashboard
+    SmartDashboard.putNumber("P Gain", TLP);
+    SmartDashboard.putNumber("I Gain", TLI);
+    SmartDashboard.putNumber("D Gain", TLD);
+    SmartDashboard.putNumber("I Zone", TLIz);
+    SmartDashboard.putNumber("Feed Forward", kFF);
+    SmartDashboard.putNumber("Max Output", kMaxOutput);
+    SmartDashboard.putNumber("Min Output", kMinOutput);
+
+
+    // BRP = 1e-4;
+    // BRI = 0;
+    // BRD = 0;
+
+    //feederVelo = 1000;
 
     // TL = Top / Left
     TLmotor1 = new CANSparkMax(3, MotorType.kBrushless);
     TLmotor1.getPIDController().setP(TLP);
     TLmotor1.getPIDController().setI(TLI);
     TLmotor1.getPIDController().setD(TLD);
-    TLmotor2 = new CANSparkMax(2, MotorType.kBrushless);
-    TLmotor2.setInverted(true);
-    TLmotor2.follow(TLmotor1);
+    // TLmotor2 = new CANSparkMax(2, MotorType.kBrushless);
+    // TLmotor2.setInverted(true);
+    // TLmotor2.follow(TLmotor1);
 
     // BR = Bottom / Right
-    BRmotor1 = new CANSparkMax(4, MotorType.kBrushless);
-    BRmotor1.setInverted(true);
-    BRmotor1.getPIDController().setP(BRP);
-    BRmotor1.getPIDController().setI(BRI);
-    BRmotor1.getPIDController().setD(BRD);
-    BRmotor2 = new CANSparkMax(1, MotorType.kBrushless);
-    BRmotor2.follow(BRmotor1);
+    // BRmotor1 = new CANSparkMax(4, MotorType.kBrushless);
+    // BRmotor1.setInverted(true);
+    // BRmotor1.getPIDController().setP(BRP);
+    // BRmotor1.getPIDController().setI(BRI);
+    // BRmotor1.getPIDController().setD(BRD);
+    // BRmotor2 = new CANSparkMax(1, MotorType.kBrushless);
+    // BRmotor2.follow(BRmotor1);
 
-    feederMotor = new CANSparkMax(5, MotorType.kBrushless);
+    // feederMotor = new CANSparkMax(5, MotorType.kBrushless);
 
     SmartDashboard.putNumber("Shooter Velocity", shooterVelo);
-    SmartDashboard.putNumber("Feeder Velocity", feederVelo);
+    // SmartDashboard.putNumber("Feeder Velocity", feederVelo);
 
     SmartDashboard.putNumber("Top/Left P", TLP);
     SmartDashboard.putNumber("Top/Left I", TLI);
     SmartDashboard.putNumber("Top/Left D", TLD);
 
-    SmartDashboard.putNumber("Bottom/Right P", BRP);
-    SmartDashboard.putNumber("Bottom/Right I", BRI);
-    SmartDashboard.putNumber("Bottom/Right D", BRD);
+    // SmartDashboard.putNumber("Bottom/Right P", BRP);
+    // SmartDashboard.putNumber("Bottom/Right I", BRI);
+    // SmartDashboard.putNumber("Bottom/Right D", BRD);
   }
 
   public Command RunMotors() {
     return run(
         () -> {
-          TLmotor1.getPIDController().setReference(shooterVelo, ControlType.kDutyCycle);
-          BRmotor1.getPIDController().setReference(shooterVelo, ControlType.kDutyCycle);
+          TLmotor1.getPIDController().setReference(shooterVelo, ControlType.kVelocity);
+          // BRmotor1.getPIDController().setReference(shooterVelo, ControlType.kVelocity);
         });
   }
 
@@ -87,21 +107,21 @@ public class ShooterSubsystem extends SubsystemBase {
     return runOnce(
         () -> {
           TLmotor1.stopMotor();
-          BRmotor1.stopMotor();
+          // BRmotor1.stopMotor();
         });
   }
 
   public Command RunFeeder() {
     return run(
         () -> {
-          feederMotor.set(feederVelo);
+          // feederMotor.set(feederVelo);
         });
   }
 
   public Command StopFeeder() {
     return runOnce(
         () -> {
-          feederMotor.stopMotor();
+          // feederMotor.stopMotor();
         });
   }
 
@@ -117,18 +137,19 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
+
     shooterVelo = SmartDashboard.getNumber("Shooter Velocity", shooterVelo);
-    feederVelo = SmartDashboard.getNumber("Feeder Velocity", feederVelo);
+    // feederVelo = SmartDashboard.getNumber("Feeder Velocity", feederVelo);
     adjustTLP();
     adjustTLI();
     adjustTLD();
 
-    adjustBRP();
-    adjustBRI();
-    adjustBRD();
+    // adjustBRP();
+    // adjustBRI();
+    // adjustBRD();
 
     SmartDashboard.putNumber("Percent Output", TLmotor1.getAppliedOutput());
-    SmartDashboard.putNumber("RMP", TLmotor1.getEncoder().getVelocity());
+    SmartDashboard.putNumber("RMP (TLmotor1)", TLmotor1.getEncoder().getVelocity());
   }
 
   public void adjustTLP() {
@@ -155,29 +176,29 @@ public class ShooterSubsystem extends SubsystemBase {
     }
   }
 
-  public void adjustBRP() {
-    double get_BRP_num = SmartDashboard.getNumber("Bottom/Right P", BRP);
-    if (BRP != get_BRP_num) {
-      BRP = get_BRP_num;
-      BRmotor1.getPIDController().setP(BRP);
-    }
-  }
+  // public void adjustBRP() {
+  //   double get_BRP_num = SmartDashboard.getNumber("Bottom/Right P", BRP);
+  //   if (BRP != get_BRP_num) {
+  //     BRP = get_BRP_num;
+  //     BRmotor1.getPIDController().setP(BRP);
+  //   }
+  // }
 
-  public void adjustBRI() {
-    double get_BRI_num = SmartDashboard.getNumber("Bottom/Right I", BRI);
-    if (BRI != get_BRI_num) {
-      BRI = get_BRI_num;
-      BRmotor1.getPIDController().setI(BRI);
-    }
-  }
+  // public void adjustBRI() {
+  //   double get_BRI_num = SmartDashboard.getNumber("Bottom/Right I", BRI);
+  //   if (BRI != get_BRI_num) {
+  //     BRI = get_BRI_num;
+  //     BRmotor1.getPIDController().setI(BRI);
+  //   }
+  // }
 
-  public void adjustBRD() {
-    double get_BRD_num = SmartDashboard.getNumber("Bottom/Right D", BRD);
-    if (BRD != get_BRD_num) {
-      BRD = get_BRD_num;
-      BRmotor1.getPIDController().setD(BRD);
-    }
-  }
+  // public void adjustBRD() {
+  //   double get_BRD_num = SmartDashboard.getNumber("Bottom/Right D", BRD);
+  //   if (BRD != get_BRD_num) {
+  //     BRD = get_BRD_num;
+  //     BRmotor1.getPIDController().setD(BRD);
+  //   }
+  // }
 
   @Override
   public void simulationPeriodic() {

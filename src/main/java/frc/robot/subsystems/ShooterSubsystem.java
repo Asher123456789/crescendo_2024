@@ -6,9 +6,6 @@ package frc.robot.subsystems;
 
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkLowLevel.MotorType;
-
-import org.littletonrobotics.junction.Logger;
-
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -30,44 +27,42 @@ public class ShooterSubsystem extends SubsystemBase {
 
   public ShooterSubsystem() {
     // PID coefficients
-    TLP = 6e-5; 
+    TLP = 6e-5;
     TLI = 0;
-    TLD = 0; 
-    TLIz = 0; 
-    kFF = 0.000015; 
-    kMaxOutput = 1; 
+    TLD = 0;
+    TLIz = 0;
+    kFF = 0.000015;
+    kMaxOutput = 1;
     kMinOutput = -1;
     maxRPM = 5700;
 
+    // TL = Top / Left
     // set PID coefficients
-    m_pidController.setP(TLP);
-    m_pidController.setI(TLI);
-    m_pidController.setD(TLD);
-    m_pidController.setIZone(TLIz);
-    m_pidController.setFF(kFF);
-    m_pidController.setOutputRange(kMinOutput, kMaxOutput);
+    TLmotor1 = new CANSparkMax(3, MotorType.kBrushless);
+    TLmotor1.getPIDController().setP(TLP);
+    TLmotor1.getPIDController().setI(TLI);
+    TLmotor1.getPIDController().setD(TLD);
+    TLmotor1.getPIDController().setIZone(TLIz);
+    TLmotor1.getPIDController().setFF(kFF);
+    TLmotor1.getPIDController().setOutputRange(kMinOutput, kMaxOutput);
 
     // display PID coefficients on SmartDashboard
-    SmartDashboard.putNumber("P Gain", TLP);
-    SmartDashboard.putNumber("I Gain", TLI);
-    SmartDashboard.putNumber("D Gain", TLD);
+    SmartDashboard.putNumber("Top/Left P", TLP);
+    SmartDashboard.putNumber("Top/Left I", TLI);
+    SmartDashboard.putNumber("Top/Left D", TLD);
     SmartDashboard.putNumber("I Zone", TLIz);
     SmartDashboard.putNumber("Feed Forward", kFF);
     SmartDashboard.putNumber("Max Output", kMaxOutput);
     SmartDashboard.putNumber("Min Output", kMinOutput);
+    SmartDashboard.putNumber("Shooter Velocity", shooterVelo);
 
 
     // BRP = 1e-4;
     // BRI = 0;
     // BRD = 0;
 
-    //feederVelo = 1000;
+    // feederVelo = 1000;
 
-    // TL = Top / Left
-    TLmotor1 = new CANSparkMax(3, MotorType.kBrushless);
-    TLmotor1.getPIDController().setP(TLP);
-    TLmotor1.getPIDController().setI(TLI);
-    TLmotor1.getPIDController().setD(TLD);
     // TLmotor2 = new CANSparkMax(2, MotorType.kBrushless);
     // TLmotor2.setInverted(true);
     // TLmotor2.follow(TLmotor1);
@@ -83,12 +78,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     // feederMotor = new CANSparkMax(5, MotorType.kBrushless);
 
-    SmartDashboard.putNumber("Shooter Velocity", shooterVelo);
     // SmartDashboard.putNumber("Feeder Velocity", feederVelo);
-
-    SmartDashboard.putNumber("Top/Left P", TLP);
-    SmartDashboard.putNumber("Top/Left I", TLI);
-    SmartDashboard.putNumber("Top/Left D", TLD);
 
     // SmartDashboard.putNumber("Bottom/Right P", BRP);
     // SmartDashboard.putNumber("Bottom/Right I", BRI);
